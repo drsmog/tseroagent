@@ -1,0 +1,22 @@
+{
+    "repoUri": "https://github.com/drsmog/TestProject.git",
+    "cloneDest": "b:\\test\\test_inside",
+    "glob": "**",
+    "artifactFullFileName": "b:\\test_out\\example.zip",
+    "artifactUnzipDest": "b:\\test_out",
+    "commands": [{
+        "cwd": "b:/test",
+        "cmds": ["ping google.com", "dir"]
+    }, {
+        "cwd": "C:/Windows/System32/inetsrv",
+        "cmds": [
+            "appcmd.exe list apppool",
+            "appcmd stop site umpas-bytsero",
+            "appcmd stop apppool umpas-bytsero",
+            "timeout 10 >NULL",
+            "appcmd start apppool umpas-bytsero",
+            "appcmd recycle apppool umpas-bytsero",
+            "appcmd start site umpas-bytsero"
+        ]
+    }]
+}
