@@ -1,22 +1,25 @@
 {
-    "repoUri": "https://github.com/drsmog/TestProject.git",
-    "cloneDest": "b:\\test\\test_inside",
-    "glob": "**",
-    "artifactFullFileName": "b:\\test_out\\example.zip",
-    "artifactUnzipDest": "b:\\test_out",
+
     "commands": [{
-        "cwd": "b:/test",
-        "cmds": ["ping google.com", "dir"]
+        "cwd": "b:/test_wd/TestProject",
+        "cmds": [
+            "$tsero deldir b:/test_wd/TestProject",
+            "$tsero deldir b:/test_out/TestProject",
+            "$tsero gitclone https://github.com/drsmog/TestProject.git b:/test_wd/TestProject",
+            "npm install",
+            "$tsero zip b:/test_wd/TestProject b:/test_out/TestProject/example.zip ignore.json",
+            "$tsero unzip b:/test_out/TestProject/example.zip b:/test_out/TestProject"
+        ]
     }, {
         "cwd": "C:/Windows/System32/inetsrv",
         "cmds": [
             "appcmd.exe list apppool",
-            "appcmd stop site umpas-bytsero",
-            "appcmd stop apppool umpas-bytsero",
+            "appcmd stop site todo_tsero",
+            "appcmd stop apppool todo_tsero",
             "timeout 10 >NULL",
-            "appcmd start apppool umpas-bytsero",
-            "appcmd recycle apppool umpas-bytsero",
-            "appcmd start site umpas-bytsero"
+            "appcmd start apppool todo_tsero",
+            "appcmd recycle apppool todo_tsero",
+            "appcmd start site todo_tsero"
         ]
     }]
 }

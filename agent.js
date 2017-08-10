@@ -6,6 +6,14 @@ const fs = require('fs');
 const archiver = require('archiver');
 const DecompressZip = require('decompress-zip');
 const chalk = require('chalk');
+const mkdirp = require('mkdirp');
+const path = require('path');
+
+const INTERNAL_COMMAND_SIGNATURE = '$tsero';
+const COMMAND_UNZIP = 'unzip';
+const COMMAND_DELDIR = 'deldir';
+const COMMAND_ZIP = 'zip';
+const COMMAND_GITCLON = 'gitclone';
 
 
 let configstring = fs.readFileSync('tseroconf.json', {
@@ -16,7 +24,7 @@ let curretnConfig = JSON.parse(configstring);
 
 
 function deleteDirectory(targetPath) {
-  console.log(chalk.yellow('Deleting Working Directory ...'));
+  console.log(chalk.yellow(`Deleting Directory ${targetPath} ...`));
 
   return rimraf(targetPath)
     .then(function () {
@@ -30,7 +38,7 @@ function deleteDirectory(targetPath) {
 }
 
 function cloneRepository(repoUri, cloneDest) {
-  console.log(chalk.yellow('Clonning Repository ... '));
+  console.log(chalk.yellow('Cloning Repository ... '));
   return clone(repoUri, cloneDest)
     .then(function () {
       console.log(chalk.green('Done'));
@@ -68,13 +76,20 @@ function run(cmd, cwd) {
 
 };
 
-function archiveFiles(workingPath, outputPath) {
+function archiveFiles(workingPath, outartifact, ignoreFile) {
 
   console.log(chalk.yellow('Archiving Artifact Files ... '));
 
   return new Promise(function (resolve, reject) {
 
-    var output = fs.createWriteStream(outputPath);
+    let ignoreArray = JSON.parse(fs.readFileSync(ignoreFile, {
+      encoding: 'utf-8'
+    }));
+
+
+    mkdirp.sync(path.dirname(outartifact));
+
+    var output = fs.createWriteStream(outartifact);
     var archive = archiver('zip', {
       zlib: {
         level: 9
@@ -103,12 +118,14 @@ function archiveFiles(workingPath, outputPath) {
 
     archive.glob(`**`, {
       cwd: `${workingPath}`,
-      ignore: ['file1', 'file2', 'file3']
+      ignore: ignoreArray
     }, {});
 
 
     // finalize the archive (ie we are done appending files but streams have to finish yet)
     archive.finalize();
+  }).catch(function (err) {
+    console.log(err);
   });
 
 }
@@ -130,7 +147,7 @@ function unzipArtifact(targetPath, unzipDest) {
     });
 
     unzipper.on('progress', function (fileIndex, fileCount) {
-      //console.log('Extracted file ' + (fileIndex + 1) + ' of ' + fileCount);
+      console.log('Extracted file ' + (fileIndex + 1) + ' of ' + fileCount);
     });
 
     unzipper.extract({
@@ -139,6 +156,8 @@ function unzipArtifact(targetPath, unzipDest) {
         return file.type !== "SymbolicLink";
       }
     });
+  }).catch(function (err) {
+    console.log(err);
   });
 
 }
@@ -150,6 +169,10 @@ function runCommandsFromConfig(commands) {
 
     item.cmds.forEach(function (command) {
       p = p.then(function () {
+        if (isInternalCommand(command)) {
+          console.log(chalk.blue(command, item.cwd));
+          return internalCommandHandler(command)
+        }
         console.log(chalk.yellow(command, item.cwd));
         return run(command, item.cwd)
       });
@@ -157,19 +180,44 @@ function runCommandsFromConfig(commands) {
   });
 
   return p;
+
+  function isInternalCommand(command) {
+    let c = command.split(' ');
+    if (c[0].trim() === INTERNAL_COMMAND_SIGNATURE) return true;
+  }
+
 }
 
-let p = Promise.resolve()
-  .then(deleteDirectory.bind(this, curretnConfig.cloneDest))
-  .then(function () {
-    return cloneRepository(curretnConfig.repoUri, curretnConfig.cloneDest);
-  })
-  .then(runCommandsFromConfig.bind(this, curretnConfig.commands))
-  .then(function () {
-    return archiveFiles(curretnConfig.cloneDest, curretnConfig.artifactFullFileName);
-  })
-  .then(function () {
+function internalCommandHandler(command) {
 
-    return unzipArtifact(curretnConfig.artifactFullFileName, curretnConfig.artifactUnzipDest);
-  });
+  return new Promise(function (resolve, reject) {
+
+    let c = command.split(' ');
+
+    if (c < 2) {
+      console.log(chalk.red('Invalid Internal Command ', command));
+      reject('Invalid Internal Command');
+    }
+
+    let internalCommand = c[1];
+
+    switch (internalCommand) {
+      case COMMAND_UNZIP:
+        return resolve(unzipArtifact(c[2], c[3]));
+      case COMMAND_ZIP:
+        return resolve(archiveFiles(c[2], c[3], c[4]));
+      case COMMAND_DELDIR:
+        return resolve(deleteDirectory(c[2]));
+      case COMMAND_GITCLON:
+        return resolve(cloneRepository(c[2], c[3]))
+
+      default:
+        return resolve();
+    }
+  })
+
+
+}
+
+runCommandsFromConfig(curretnConfig.commands);
 
