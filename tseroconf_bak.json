@@ -9,8 +9,7 @@
     }, {
         "cwd": "C:/projects/ngrxtodo",
         "cmds": [
-            "$tsero deldir C:/projects/ngrxtodo",
-            "$tsero deldir C:/inetpub/todo_tsero",
+            "$tsero deldir C:/inetpub/todo_tsero/1",
             "$tsero gitclone https://github.com/drsmog/ngrxtodo.git C:/projects/ngrxtodo",
             "git pull origin master",
             "npm install"
@@ -25,7 +24,13 @@
         "cwd": "C:/projects/ngrxtodo",
         "cmds": [
             "$tsero zip C:/projects/ngrxtodo C:/inetpub/todo_tsero/example.zip ignore.json",
-            "$tsero unzip C:/inetpub/todo_tsero/example.zip C:/inetpub/todo_tsero"
+            "$tsero unzip C:/inetpub/todo_tsero/example.zip C:/inetpub/todo_tsero/1"
+        ]
+    }, {
+        "cwd": "C:/inetpub/todo_tsero",
+        "cmds": [
+            "rmdir C:\\inetpub\\todo_tsero\\todolink",
+            "mklink /D C:\\inetpub\\todo_tsero\\todolink C:\\inetpub\\todo_tsero\\1"
         ]
     }, {
         "cwd": "C:/Windows/System32/inetsrv",
